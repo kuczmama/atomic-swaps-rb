@@ -31,7 +31,7 @@ A bitcoin transaction has 4 parts
         - vout: output from the transaction
         - scriptSig size: size of script sig
         - scriptSig Unlocking SCript: script to unlock transaction
-        - sequence: 4 bytes ffffffff
+        - sequence: p4 bytes ffffffff
 3. Outputs
     - Output count:
          - value: 8 bytes in satoshis
@@ -44,8 +44,11 @@ The scriptSig is provided as an output to script pubkey
 - A bitcoin address is a hash of the public key
 - Output = Bitcoin Value + Locking Script
 
-## Pay To Public Key Hash (P2PKH)
+## Multisig example
+https://gist.github.com/gavinandresen/3966071
 
+## Pay To Public Key Hash (P2PKH)
+https://www.youtube.com/watch?v=47dKdtOXANo
 If Alice sends Bitcoin to Bob that means she created a locking script/scriptPubkey to Bob's bitcoin address
 
 Input
@@ -58,6 +61,14 @@ OP_DUP OP_HASH_160 <Bitcoin Address> OP_EQUAL_VERIFY OP_CHECKSIG
 = Input + Output
 eg:
 <signature> <public Key>  | OP_DUP OP_HASH_160 <Bitcoin Address> OP_EQUAL_VERIFY OP_CHECKSIG
+
+### Stack
+
+
+<bitcoin addres>
+h(public key)
+<Public Key>
+<Signature>
 
 
 ### Example Tx
@@ -79,6 +90,10 @@ Outputs
         script pubKey: 76a914db4d1141d0048b1ed15839d0b7a4c488cd368b0e88ac
 Locktime:
     00000000
+
+## Pay to Script Hash
+
+With a pay to script hash, your locking script is simply a hash of a script.  The script is only revealed when you try to spend those transactions?
 
 ## Links
 

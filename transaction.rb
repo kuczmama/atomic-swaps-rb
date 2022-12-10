@@ -1,4 +1,5 @@
 require_relative 'transaction_helper'
+# This class is made to 
 
 # https://createbitcointransaction.com/
 
@@ -15,7 +16,12 @@ class Transaction
         self
     end
 
-    def add_input(prev_tx_id, prev_tx_output_num)
+    # Add a new input to the transaction
+    #
+    # @param prev_tx_id - the previous transaction id
+    # @param - prev_tx_output_num - the vout of the previous transaction
+    # @param - a string representing the unlocking script
+    def add_input(prev_tx_id, prev_tx_output_num, unlocking_script)
         input = ""
         input += to_little_endian(prev_tx_id, 32)
         input += to_little_endian(prev_tx_output_num, 4)
