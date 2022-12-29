@@ -3,12 +3,13 @@ Here's the idea.  We have a decentralized exchange that is completely trustless,
 
 There will be no counterparty risk because we won't hold any coins.  But, we do take a X% transaction fee in the coin that you are sending.
 
+We need to have a simple protocol to do atomic swaps without holding any customer funds.
+
 https://bitcointalk.org/index.php?topic=193281.msg2224949#msg2224949
 
 # Atomic Swap Protocol
+https://github.com/KomodoPlatform/atomicDEX-API
 
-1. Alice picks a random number X
-2. Alice creates Tx1:
 
 Tx1:
 Pay w BTC to <B's public key> if x for H(x) known and signed by B
