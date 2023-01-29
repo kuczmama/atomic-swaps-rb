@@ -425,10 +425,79 @@ You end up with a pubkey hash on top of the stack, which is non-zero and the coi
 
 - This is based on "lock time/block time" fields, where a transaction is only valid after a specific block time or height
 
-**blocktime** - The transaction is not valid until after this unix time.
-**locktime** - The transaction is not valid until after this block. 
+- **blocktime** - The transaction is not valid until after this unix time.
+- **locktime** - The transaction is not valid until after this block. 
 
 **A payment Channel** is a multisig output with 2 of 2 signatures required
-For example Alice creates a transaction with an input where the output is a multisig between BOB and Alice
 
-![](2023-01-15-08-56-18.png)
+There are a few steps to creating a payment channel.
+
+1. Alice creates, but does not sign a funding transaction.  The funding transaction has an output of an Alice and Bob multisig with X coins.
+
+The funding transaction is where Alice sends X coins to a multisig controlled by both Alice and Bob
+
+2. Alice sends the funding transaction details to Bob, and Bob uses it to create a refund transaction.
+
+The refund transaction uses the funding transaction as an input with all of the money going back to Alice.  But the refund transaction has a lock time in the future.
+
+3. Bob signs the refund transaction and sends it to Alice.  But the refund transaction isn't broadcasted... Alice just has it on disc.
+4. Alice can now safely sign and broadcast the funding transaction since she now has the refund transaction
+5. Alice now can send n payments to bob with her signature from the funding transaction off-chain.  Where the input to the payment is her funding transaction ID.  
+6. BOB takes the payment from Alice and broadcasts it at the end of their transactions... before the refund locktime is up... once he broadcasts the received transaction then Alice's refund transaction is invalid because you can't double spend the coins from the same input.
+
+This allows alice to broadcast transactions one way to BOB offchain... in increasing increments.  For example, if you wanted to send money for video streaming, every time you streamed a video you could do this transaction.
+
+- The old transactions are useless
+- BOB needs to sign and broadcast one of these transactions before the refund transaction is sent
+
+## Funding Transaction
+- open the payment channel to BOB
+![](2023-01-15-09-15-52.png)
+But alice creates a refund transaction with a locktime in the future
+
+## Refund Transaction
+- A get out of jail free card, to get the money back if BOB goes away
+![](2023-01-15-09-16-19.png)
+
+## Payment Channel
+- Alice creates transactions using the funding transaction as an input, and sends to BOB. She can send as many transactions she likes to BOB as long as they are increasing.
+![](2023-01-15-09-49-51.png)
+
+![](2023-01-15-09-17-45.png)
+
+## Lightning Network
+
+- A bidirectional payment channel that can last forever
+- Can you delete/revert old transactions?
+
+*OP_CHECKSEQUENCE_VERIFY (CSV)* - A relative locktime, meaning a transaction is spendable after X blocks or Y seconds in the future.  But it is not spendable before then.  i.e. you need to wait for n confirmations to be able to spend if not the tx fails.
+*OP_CHECKLOCKTIME_VERIFY* - An absolute locktime opcode.  This says the transaction must be spend AFTER block n, else it will fail.
+
+You can use the above opcodes to conditionally revoke... e.g.
+
+```
+(keyA && keyB) || (keyC && 100 blocks)
+```
+
+Meaning, keyA and keyB can spend at any time, OR keyC can spend, but it must wait 100 blocks.
+
+![](2023-01-22-14-02-37.png)
+
+The lightning network does Bitcoin transactions off-chain.  The idea is that two people can send transactions to each other invalidating older transactions.  For example, Alice and Bob can agree that Alice has 2 bitcoin, and Bob has 8 bitcoin.  But it is possible to create a new transaction where Alice has 3 Bitcoin and Bob has 7 Bitcoin, and the previous Alice:2 and Bob:8 transaction is invalid.
+
+For example:
+
+State 0 -- Alice:8, Bob:2
+State 1 -- Alice:5, Bob:5
+State 2 -- Alice:2, Bob:8
+...
+
+Each state can be closed (by commiting to the blockchain)  at any time by either party.  Each state is created with a pair of "Commit Transactions".  The each commit transaction says that Alice has X bitcoin and Bob has Y bitcoin.  But the idea is if you lie about deleting a previous transaction, then you can spend all of the other persons money.  Because you give the other party a "Redeem Transaction", which makes them able to spend your coins if they broadcast it.
+
+To invalidate previous states Both Alice and Bob can reveal private keys to their money "proving" that they won't broadcast the transaction or else the other person can take all the money.
+
+But one catch is both Alice and Bob need to keep track of the other person's revocation keys, so the longer the payment channel is open... the more revoke keys you'll need to keep track of, until the payment channel is closed.  Although there are some optimizations where you can potentially store log(n) revokation keys by using a merkle tree like data structure.
+
+![](2023-01-22-15-47-15.png)
+
+It is possible to link these channels between multiple nodes, which can forward transactions to each other.  Each forwarding transaction between lightning nodes can charge an optional fee, although it will likely be pretty low.
